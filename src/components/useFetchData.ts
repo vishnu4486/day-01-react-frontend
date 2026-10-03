@@ -1,29 +1,36 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 
-export default function useFetchData(url) {
-  const [postList, setPostList] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+function useFetchData<T>(url: string) {
+  const [postList, setPostList] = useState<T | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Prevent execution if no URL is provided
-    if (!url) return;
+    if (!url) {
+      setLoading(false);
+      return;
+    }
 
     const fetchData = async () => {
       setLoading(true);
       setError(null);
 
       try {
-        const res = await fetch(url);
+        const response = await fetch(url);
 
-        if (!res.ok) {
-          throw new Error(`Error: ${res.status} ${res.statusText}`);
+        if (!response.ok) {
+          throw new Error(`Error: ${response.status} ${response.statusText}`);
         }
 
-        const data = await res.json();
+        const data: T = await response.json();
+
         setPostList(data);
-      } catch (err) {
-        setError(err.message || "Something went wrong");
+      } catch (err: unknown) {
+        if (err instanceof Error) {
+          setError(err.message);
+        } else {
+          setError("Something went wrong");
+        }
       } finally {
         setLoading(false);
       }
@@ -32,5 +39,11 @@ export default function useFetchData(url) {
     fetchData();
   }, [url]);
 
-  return { postList, loading, error };
+  return {
+    postList,
+    loading,
+    error,
+  };
 }
+
+export default useFetchData;
