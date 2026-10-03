@@ -16,30 +16,52 @@ jobs:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
+
           script: |
             set -e
 
+            echo "================================"
             echo "Starting deployment"
+            echo "================================"
 
+            # Load NVM
+            export NVM_DIR="$HOME/.nvm"
+
+            if [ -s "$NVM_DIR/nvm.sh" ]; then
+              . "$NVM_DIR/nvm.sh"
+            else
+              echo "NVM not found"
+              exit 1
+            fi
+
+            echo "Node version:"
+            node -v
+
+            echo "NPM version:"
+            npm -v
+
+            # Move to React project
             cd ~/day-01-react-frontend
 
-            echo "Pulling latest code"
+            echo "Pulling latest code..."
             git pull origin main
 
-            echo "Installing dependencies"
+            echo "Installing dependencies..."
             npm ci
 
-            echo "Building React application"
+            echo "Building React application..."
             npm run build
 
-            echo "Deploying build to Nginx"
+            echo "Deploying build to Nginx..."
             sudo rm -rf /var/www/html/*
             sudo cp -r dist/* /var/www/html/
 
-            echo "Testing Nginx"
+            echo "Testing Nginx configuration..."
             sudo nginx -t
 
-            echo "Reloading Nginx"
+            echo "Reloading Nginx..."
             sudo systemctl reload nginx
 
+            echo "================================"
             echo "Deployment successful"
+            echo "================================"
