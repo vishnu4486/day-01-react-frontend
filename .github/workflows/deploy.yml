@@ -1,0 +1,45 @@
+name: Deploy React to EC2
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy to EC2
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            set -e
+
+            echo "Starting deployment"
+
+            cd ~/day-01-react-frontend
+
+            echo "Pulling latest code"
+            git pull origin main
+
+            echo "Installing dependencies"
+            npm ci
+
+            echo "Building React application"
+            npm run build
+
+            echo "Deploying build to Nginx"
+            sudo rm -rf /var/www/html/*
+            sudo cp -r dist/* /var/www/html/
+
+            echo "Testing Nginx"
+            sudo nginx -t
+
+            echo "Reloading Nginx"
+            sudo systemctl reload nginx
+
+            echo "Deployment successful"
